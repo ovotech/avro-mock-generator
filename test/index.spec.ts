@@ -50,6 +50,27 @@ describe('Avro mock data generator', () => {
     expect(result).toEqual({ farm: { nbChickens: expect.any(Number) } });
   });
 
+  // TODO if only union types are namespaced, how to reconcile controlling which of the union type to return and namespacing?
+  // TODO this is only happening on union types. So need to support union types first
+  // it('support namespace', () => {
+  //   const result = generateData({
+  //     type: 'record',
+  //     fields: [
+  //       {
+  //         name: 'farm',
+  //         type: {
+  //           type: 'record',
+  //           namespace: 'country.',
+  //           fields: [{ name: 'nbChickens', type: 'int' }],
+  //         },
+  //       },
+  //     ],
+  //   });
+  //   expect(result).toEqual({
+  //     'country.farm': { nbChickens: expect.any(Number) },
+  //   });
+  // });
+
   it('throws when encountering an unknown type', () => {
     const schema = {
       type: 'record',
