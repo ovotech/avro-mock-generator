@@ -2,7 +2,7 @@ import { randomFillSync } from 'crypto';
 
 import uuid from 'uuid/v4';
 
-const typeGenerators = {
+const defaultGenerators = {
   int: () => Math.floor(Math.random() * Number.MAX_SAFE_INTEGER),
   // This  doesn't technically produce a long but JS doesn't support those, so it's likely the user will have a logicalType on top of it
   long: () => Math.floor(Math.random() * Number.MAX_SAFE_INTEGER),
@@ -12,8 +12,8 @@ const typeGenerators = {
   boolean: () => Boolean(Math.round(Math.random())),
   string: () => uuid(),
   bytes: () => Buffer.from(uuid(), 'ascii'),
-  array: ({ items }) => [generateDataForType(items)],
-  map: ({ values }) => ({ [uuid()]: generateDataForType(values) }),
+  array: ({ items }, generators) => [generateDataForType(items, generators)],
+  map: ({ values }, generators) => ({ [uuid()]: generateDataForType(values, generators) }),
   enum: ({ symbols }) => symbols[0],
   uuid: () => uuid(),
   decimal: generateDecimal,
@@ -24,23 +24,23 @@ const typeGenerators = {
   'timestamp-millis': () => Math.floor(Math.random() * Number.MAX_SAFE_INTEGER),
   'timestamp-micros': () => Math.floor(Math.random() * Number.MAX_SAFE_INTEGER),
   duration: generateDuration,
-  date: () => new Date()
+  date: () => new Date(),
   // TODO: allow overriding of any of those generators
 };
 
 function generateDuration() {
-  const buf = new Buffer(12)
-  buf.writeIntLE(Math.random(), 0, 4)
-  buf.writeIntLE(Math.random(), 0, 4)
-  buf.writeIntLE(Math.random(), 0, 4)
-  return buf.toString('ascii')
+  const buf = new Buffer(12);
+  buf.writeIntLE(Math.random(), 0, 4);
+  buf.writeIntLE(Math.random(), 0, 4);
+  buf.writeIntLE(Math.random(), 0, 4);
+  return buf.toString('ascii');
 }
 
 function generateDecimal() {
   // this ignores scale and precision, probably ok but PR welcome!
-  const buf = new Buffer(6)
-  buf.writeIntBE(Math.random(), 0, buf.length)
-  return buf
+  const buf = new Buffer(6);
+  buf.writeIntBE(Math.random(), 0, buf.length);
+  return buf;
 }
 
 function generateFixed({ size }) {
@@ -49,25 +49,24 @@ function generateFixed({ size }) {
   return buffer.toString('ascii');
 }
 
-function generateDataForType(type) {
-  if (typeGenerators[type]) {
-    return typeGenerators[type]();
+function generateDataForType(type, generators) {
+  if (generators[type]) {
+    return generators[type](type, generators);
   }
 
   if (typeof type === 'object') {
-    if (typeGenerators[type.logicalType]) {
-      return typeGenerators[type.logicalType](type);
+    if (generators[type.logicalType]) {
+      return generators[type.logicalType](type, generators);
     }
-    if (typeGenerators[type.type]) {
-      return typeGenerators[type.type](type);
+    if (generators[type.type]) {
+      return generators[type.type](type, generators)
     }
   }
-  // TODO support custom logical types
 
   throw new Error(`Unknown type ${type}`);
 }
 
-function generateRecord({ fields, namespace }) {
+function generateRecord({ fields, namespace }, generators) {
   return fields.reduce((record, { name, type }) => {
     if (Array.isArray(type)) {
       /* union type, always choose the first one
@@ -78,15 +77,26 @@ function generateRecord({ fields, namespace }) {
       let namespacedName = namespace
         ? `${namespace}.${chosenType.name}`
         : chosenType.name;
-      record[namespacedName] = generateDataForType(chosenType);
+      record[namespacedName] = generateDataForType(chosenType, generators);
     } else {
-      record[name] = generateDataForType(type);
+      record[name] = generateDataForType(type, generators);
     }
 
     return record;
   }, {});
 }
 
-export default <T = any>(schema: any) => {
-  return generateRecord(schema) as T;
+export type Generator = (typeDef: any, generators: Generator) => any;
+export type Options = {
+  generators?: {
+    [key: string]: Generator
+  };
+};
+
+export default <T = any>(schema: any, options : Options = {}) => {
+  const { generators } = options
+  return generateRecord(schema, {
+    ...defaultGenerators,
+    ...(generators || {}),
+  }) as T;
 };

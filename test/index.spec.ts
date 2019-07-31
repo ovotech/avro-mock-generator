@@ -202,4 +202,12 @@ describe('Avro mock data generator', () => {
 
     expect(() => generateData(schema)).toThrow('Unknown type');
   });
+
+  it('allows custom generators', () => {
+    const result = generateData({
+      type: 'record',
+      fields: [{ name: 'chickenName', type: 'string' }],
+    }, { generators: { 'string': () => 'henry'}});
+    expect(result).toEqual({ chickenName: 'henry'});
+  })
 });
