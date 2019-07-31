@@ -15,9 +15,33 @@ const typeGenerators = {
   array: ({ items }) => [generateDataForType(items)],
   map: ({ values }) => ({ [uuid()]: generateDataForType(values) }),
   enum: ({ symbols }) => symbols[0],
+  uuid: () => uuid(),
+  decimal: generateDecimal,
   fixed: generateFixed,
   record: generateRecord,
+  'time-millis': () => Math.floor(Math.random() * Number.MAX_SAFE_INTEGER),
+  'time-micros': () => Math.floor(Math.random() * Number.MAX_SAFE_INTEGER),
+  'timestamp-millis': () => Math.floor(Math.random() * Number.MAX_SAFE_INTEGER),
+  'timestamp-micros': () => Math.floor(Math.random() * Number.MAX_SAFE_INTEGER),
+  duration: generateDuration,
+  date: () => new Date()
+  // TODO: allow overriding of any of those generators
 };
+
+function generateDuration() {
+  const buf = new Buffer(12)
+  buf.writeIntLE(Math.random(), 0, 4)
+  buf.writeIntLE(Math.random(), 0, 4)
+  buf.writeIntLE(Math.random(), 0, 4)
+  return buf.toString('ascii')
+}
+
+function generateDecimal() {
+  // this ignores scale and precision, probably ok but PR welcome!
+  const buf = new Buffer(6)
+  buf.writeIntBE(Math.random(), 0, buf.length)
+  return buf
+}
 
 function generateFixed({ size }) {
   const buffer = Buffer.alloc(size);
@@ -30,10 +54,15 @@ function generateDataForType(type) {
     return typeGenerators[type]();
   }
 
-  if (typeof type === 'object' && typeGenerators[type.type]) {
-    return typeGenerators[type.type](type);
+  if (typeof type === 'object') {
+    if (typeGenerators[type.logicalType]) {
+      return typeGenerators[type.logicalType](type);
+    }
+    if (typeGenerators[type.type]) {
+      return typeGenerators[type.type](type);
+    }
   }
-  // TODO support logical types
+  // TODO support custom logical types
 
   throw new Error(`Unknown type ${type}`);
 }
@@ -58,6 +87,6 @@ function generateRecord({ fields, namespace }) {
   }, {});
 }
 
-export default (schema: any) => {
-  return generateRecord(schema);
+export default <T = any>(schema: any) => {
+  return generateRecord(schema) as T;
 };

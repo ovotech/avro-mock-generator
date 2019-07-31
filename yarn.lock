@@ -1746,6 +1746,11 @@ istanbul-reports@^2.1.1:
   dependencies:
     handlebars "^4.1.2"
 
+isuuid@^0.1.0:
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/isuuid/-/isuuid-0.1.0.tgz#508109ac140d6de43b3f846506cdb665dd3e8733"
+  integrity sha1-UIEJrBQNbeQ7P4RlBs22Zd0+hzM=
+
 jest-changed-files@^24.8.0:
   version "24.8.0"
   resolved "https://registry.yarnpkg.com/jest-changed-files/-/jest-changed-files-24.8.0.tgz#7e7eb21cf687587a85e50f3d249d1327e15b157b"

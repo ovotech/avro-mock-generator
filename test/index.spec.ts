@@ -1,3 +1,5 @@
+import isuuid from 'isuuid'
+
 import generateData from '../src/index';
 
 describe('Avro mock data generator', () => {
@@ -16,6 +18,14 @@ describe('Avro mock data generator', () => {
         { name: 'array', type: { type: 'array', items: 'string' } },
         { name: 'map', type: { type: 'map', values: 'int' } },
         { name: 'fixed', type: { type: 'fixed', size: 16} },
+        { name: 'uuid', type: { type: 'string', logicalType: 'uuid'} },
+        { name: 'decimal', type: { type: 'bytes', logicalType: 'decimal'} },
+        { name: 'time-millis', type: { type: 'int', logicalType: 'time-millis'} },
+        { name: 'time-micros', type: { type: 'long', logicalType: 'time-micros'} },
+        { name: 'timestamp-millis', type: { type: 'long', logicalType: 'timestamp-millis'} },
+        { name: 'timestamp-micros', type: { type: 'long', logicalType: 'timestamp-micros'} },
+        { name: 'duration', type: { type: 'fixed', logicalType: 'duration'} },
+        { name: 'date', type: { type: 'int', logicalType: 'date'} },
       ],
     });
 
@@ -32,6 +42,7 @@ describe('Avro mock data generator', () => {
     expect(result).toMatchObject({
       array: expect.arrayContaining([expect.any(String)]),
     });
+    expect(result).toMatchObject({ date: expect.any(Date) });
 
     expect(Object.entries(result.map).length).toEqual(1);
     expect(Object.values(result.map)).toEqual(
@@ -40,6 +51,19 @@ describe('Avro mock data generator', () => {
 
     expect(typeof result.fixed).toEqual('string')
     expect(result.fixed).toHaveLength(16)
+
+    expect(isuuid(result.uuid)).toBe(true)
+
+    expect(result).toMatchObject({ decimal: expect.any(Buffer) });
+    expect(typeof result.decimal.readIntBE(0, result.decimal.length)).toEqual('number')
+
+    expect(result).toMatchObject({ 'time-millis': expect.any(Number) });
+    expect(result).toMatchObject({ 'time-micros': expect.any(Number) });
+    expect(result).toMatchObject({ 'timestamp-millis': expect.any(Number) });
+    expect(result).toMatchObject({ 'timestamp-micros': expect.any(Number) });
+
+    expect(typeof result.duration).toEqual('string')
+    expect(result.duration).toHaveLength(12)
   });
 
   it('can parse a basic schema', () => {
