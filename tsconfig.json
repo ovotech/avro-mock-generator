@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es2017",
+    "types": ["jest"],
+    "outDir": "./dist",
+    "esModuleInterop": true,
+    "strict": true,
+    "moduleResolution": "node",
+    "typeRoots": ["./@types", "./node_modules/@types"],
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
+  },
+  "include": ["./src/**/*.ts"],
+  "exclude": ["node_modules", "**/*.spec.ts"]
+}
