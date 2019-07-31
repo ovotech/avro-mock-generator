@@ -2,7 +2,7 @@
   "compilerOptions": {
     "module": "commonjs",
     "target": "es2017",
-    "types": ["jest"],
+    "types": ["jest", "node"],
     "outDir": "./dist",
     "esModuleInterop": true,
     "strict": true,

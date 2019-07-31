@@ -29,11 +29,16 @@
   "homepage": "https://github.com/ovotech/avro-mock-generator#readme",
   "devDependencies": {
     "@types/jest": "^24.0.16",
+    "@types/node": "^12.6.8",
     "husky": "^3.0.2",
     "jest": "^24.8.0",
     "prettier": "^1.18.2",
     "ts-jest": "^24.0.2",
     "tslint": "^5.18.0",
     "typescript": "^3.5.3"
+  },
+  "dependencies": {
+    "@types/uuid": "^3.4.5",
+    "uuid": "^3.3.2"
   }
 }
