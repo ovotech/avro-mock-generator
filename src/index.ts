@@ -13,7 +13,9 @@ const defaultGenerators = {
   string: () => uuid(),
   bytes: () => Buffer.from(uuid(), 'ascii'),
   array: ({ items }, generators) => [generateDataForType(items, generators)],
-  map: ({ values }, generators) => ({ [uuid()]: generateDataForType(values, generators) }),
+  map: ({ values }, generators) => ({
+    [uuid()]: generateDataForType(values, generators),
+  }),
   enum: ({ symbols }) => symbols[0],
   uuid: () => uuid(),
   decimal: generateDecimal,
@@ -59,7 +61,7 @@ function generateDataForType(type, generators) {
       return generators[type.logicalType](type, generators);
     }
     if (generators[type.type]) {
-      return generators[type.type](type, generators)
+      return generators[type.type](type, generators);
     }
   }
 
@@ -74,7 +76,7 @@ function generateRecord({ fields, namespace }, generators) {
        * of the union is being used
        */
       const chosenType = type[0];
-      let namespacedName = namespace
+      const namespacedName = namespace
         ? `${namespace}.${chosenType.name}`
         : chosenType.name;
       record[namespacedName] = generateDataForType(chosenType, generators);
@@ -89,12 +91,12 @@ function generateRecord({ fields, namespace }, generators) {
 export type Generator = (typeDef: any, generators: Generator) => any;
 export type Options = {
   generators?: {
-    [key: string]: Generator
+    [key: string]: Generator;
   };
 };
 
-export default <T = any>(schema: any, options : Options = {}) => {
-  const { generators } = options
+export default <T = any>(schema: any, options: Options = {}) => {
+  const { generators } = options;
   return generateRecord(schema, {
     ...defaultGenerators,
     ...(generators || {}),
