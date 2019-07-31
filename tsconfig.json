@@ -9,6 +9,7 @@
     "moduleResolution": "node",
     "typeRoots": ["./@types", "./node_modules/@types"],
     "noUnusedLocals": true,
+    "noImplicitAny": false,
     "noUnusedParameters": true
   },
   "include": ["./src/**/*.ts"],
