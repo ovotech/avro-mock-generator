@@ -1,3 +1,5 @@
+import { randomFillSync } from 'crypto';
+
 import uuid from 'uuid/v4';
 
 const typeGenerators = {
@@ -10,18 +12,28 @@ const typeGenerators = {
   boolean: () => Boolean(Math.round(Math.random())),
   string: () => uuid(),
   bytes: () => Buffer.from(uuid(), 'ascii'),
+  array: ({ items }) => [generateDataForType(items)],
+  map: ({ values }) => ({ [uuid()]: generateDataForType(values) }),
+  enum: ({ symbols }) => symbols[0],
+  fixed: generateFixed,
+  record: generateRecord,
 };
+
+function generateFixed({ size }) {
+  const buffer = Buffer.alloc(size);
+  randomFillSync(buffer);
+  return buffer.toString('ascii');
+}
 
 function generateDataForType(type) {
   if (typeGenerators[type]) {
     return typeGenerators[type]();
   }
 
-  if (typeof type === 'object') {
-    if (type.type === 'record') {
-      return generateRecord(type);
-    }
+  if (typeof type === 'object' && typeGenerators[type.type]) {
+    return typeGenerators[type.type](type);
   }
+  // TODO support logical types
 
   throw new Error(`Unknown type ${type}`);
 }
@@ -46,7 +58,6 @@ function generateRecord({ fields, namespace }) {
   }, {});
 }
 
-// TODO support logical types
 export default (schema: any) => {
   return generateRecord(schema);
 };
