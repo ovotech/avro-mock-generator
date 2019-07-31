@@ -2,7 +2,8 @@
   "name": "@ovotech/avro-mock-generator",
   "version": "0.0.0",
   "description": "Generate mock messages from an avro schema",
-  "main": "index.js",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsc",
     "lint": "tslint -p .",
