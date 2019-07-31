@@ -22,12 +22,26 @@ function generateDataForType(type) {
       return generateRecord(type);
     }
   }
+
   throw new Error(`Unknown type ${type}`);
 }
 
-function generateRecord({ fields }) {
+function generateRecord({ fields, namespace }) {
   return fields.reduce((record, { name, type }) => {
-    record[name] = generateDataForType(type);
+    if (Array.isArray(type)) {
+      /* union type, always choose the first one
+       * so that the caller can be in control of which type
+       * of the union is being used
+       */
+      const chosenType = type[0];
+      let namespacedName = namespace
+        ? `${namespace}.${chosenType.name}`
+        : chosenType.name;
+      record[namespacedName] = generateDataForType(chosenType);
+    } else {
+      record[name] = generateDataForType(type);
+    }
+
     return record;
   }, {});
 }

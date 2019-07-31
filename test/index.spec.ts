@@ -50,26 +50,75 @@ describe('Avro mock data generator', () => {
     expect(result).toEqual({ farm: { nbChickens: expect.any(Number) } });
   });
 
-  // TODO if only union types are namespaced, how to reconcile controlling which of the union type to return and namespacing?
-  // TODO this is only happening on union types. So need to support union types first
-  // it('support namespace', () => {
-  //   const result = generateData({
-  //     type: 'record',
-  //     fields: [
-  //       {
-  //         name: 'farm',
-  //         type: {
-  //           type: 'record',
-  //           namespace: 'country.',
-  //           fields: [{ name: 'nbChickens', type: 'int' }],
-  //         },
-  //       },
-  //     ],
-  //   });
-  //   expect(result).toEqual({
-  //     'country.farm': { nbChickens: expect.any(Number) },
-  //   });
-  // });
+  it('support union types', () => {
+    const result = generateData({
+      type: 'record',
+      fields: [
+        {
+          name: 'country',
+          type: [
+            {
+              type: 'record',
+              name: 'CountryFarm',
+              fields: [{ name: 'nbChickens', type: 'int' }],
+            },
+          ],
+        },
+      ],
+    });
+    expect(result).toEqual({
+      CountryFarm: { nbChickens: expect.any(Number) },
+    });
+  });
+
+  it('support union types with a namespace', () => {
+    const result = generateData({
+      type: 'record',
+      namespace: 'com.farms',
+      fields: [
+        {
+          name: 'farms',
+          type: [
+            {
+              type: 'record',
+              name: 'CountryFarm',
+              fields: [{ name: 'nbChickens', type: 'int' }],
+            },
+          ],
+        },
+      ],
+    });
+    expect(result).toEqual({
+      'com.farms.CountryFarm': { nbChickens: expect.any(Number) },
+    });
+  });
+
+  it('always chooses the first type in a union type', () => {
+    // 1/1000 chances that this test falsely pass is deemed acceptable, but you can always up the number
+    const unionType = Array(1000).fill({
+      type: 'record',
+      name: 'CityFarm',
+      fields: [{ name: 'nbPidgeons', type: 'int' }],
+    });
+    unionType[0] = {
+      type: 'record',
+      name: 'CountryFarm',
+      fields: [{ name: 'nbChickens', type: 'int' }],
+    };
+
+    const result = generateData({
+      type: 'record',
+      fields: [
+        {
+          name: 'farm',
+          type: unionType,
+        },
+      ],
+    });
+    expect(result).toEqual({
+      CountryFarm: { nbChickens: expect.any(Number) },
+    });
+  });
 
   it('throws when encountering an unknown type', () => {
     const schema = {
