@@ -1,0 +1,26 @@
+{
+  "name": "@ovotech/avro-mock-generator",
+  "version": "0.0.0",
+  "description": "Generate mock messages from an avro schema",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ovotech/avro-mock-generator.git"
+  },
+  "keywords": [
+    "avro",
+    "avsc",
+    "mock",
+    "generate",
+    "data"
+  ],
+  "author": "",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/ovotech/avro-mock-generator/issues"
+  },
+  "homepage": "https://github.com/ovotech/avro-mock-generator#readme"
+}
