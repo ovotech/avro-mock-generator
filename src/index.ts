@@ -12,9 +12,9 @@ const defaultGenerators = {
   boolean: () => Boolean(Math.round(Math.random())),
   string: () => uuid(),
   bytes: () => Buffer.from(uuid(), 'ascii'),
-  array: ({ items }, generators) => [generateDataForType(items, generators)],
-  map: ({ values }, generators) => ({
-    [uuid()]: generateDataForType(values, generators),
+  array: ({ items }, context) => [generateDataForType(items, context)],
+  map: ({ values }, context) => ({
+    [uuid()]: generateDataForType(values, context),
   }),
   enum: ({ symbols }) => symbols[0],
   uuid: () => uuid(),
@@ -27,7 +27,6 @@ const defaultGenerators = {
   'timestamp-micros': () => Math.floor(Math.random() * Number.MAX_SAFE_INTEGER),
   duration: generateDuration,
   date: () => new Date(),
-  // TODO: allow overriding of any of those generators
 };
 
 function generateDuration() {
@@ -51,24 +50,25 @@ function generateFixed({ size }) {
   return buffer.toString('ascii');
 }
 
-function generateDataForType(type, generators) {
+function generateDataForType(type, context) {
+  const { generators } = context;
   if (generators[type]) {
-    return generators[type](type, generators);
+    return generators[type](type, context);
   }
 
   if (typeof type === 'object') {
     if (generators[type.logicalType]) {
-      return generators[type.logicalType](type, generators);
+      return generators[type.logicalType](type, context);
     }
     if (generators[type.type]) {
-      return generators[type.type](type, generators);
+      return generators[type.type](type, context);
     }
   }
 
   throw new Error(`Unknown type ${type}`);
 }
 
-function generateRecord({ fields, namespace }, generators) {
+function generateRecord({ fields, namespace }, context) {
   return fields.reduce((record, { name, type }) => {
     if (Array.isArray(type)) {
       /* union type, always choose the first one
@@ -79,9 +79,9 @@ function generateRecord({ fields, namespace }, generators) {
       const namespacedName = namespace
         ? `${namespace}.${chosenType.name}`
         : chosenType.name;
-      record[namespacedName] = generateDataForType(chosenType, generators);
+      record[namespacedName] = generateDataForType(chosenType, context);
     } else {
-      record[name] = generateDataForType(type, generators);
+      record[name] = generateDataForType(type, context);
     }
 
     return record;
@@ -89,16 +89,22 @@ function generateRecord({ fields, namespace }, generators) {
 }
 
 export type Generator = (typeDef: any, generators: Generator) => any;
+export type Generators = {
+  [key: string]: Generator;
+};
+export type Context = {
+  generators: Generators;
+};
 export type Options = {
-  generators?: {
-    [key: string]: Generator;
-  };
+  generators?: Generators;
 };
 
 export default <T = any>(schema: any, options: Options = {}) => {
   const { generators } = options;
   return generateRecord(schema, {
-    ...defaultGenerators,
-    ...(generators || {}),
+    generators: {
+      ...defaultGenerators,
+      ...(generators || {}),
+    },
   }) as T;
 };

@@ -1,10 +1,53 @@
-Work entirely in progress.
+# Avro Mock Generator
 
-This is a trial, it might not get completed (but hopefully will, eh), come back in a few.
+Create mock messages from Avro schemas.
 
-To document:
-- The whole thing
-- namespace + union + how we select first item (also in enums)
-- logical types defaulting to underlying type
-- override type generator
-- stuff not supported (aliases, others?)
+## Usage
+
+## Simple usage
+
+Call the generator with the schema:
+
+```
+import generateMsg from '@ovotech/avro-mock-generator'
+
+const schema = {
+  type: 'record',
+  fields: [{ name: 'nbChickens', type: 'int' }],
+}
+console.log(generateData(schema));
+
+// { nbChickens: 25672672 }
+```
+
+All fields will contain randomly generated data that respects their type.
+
+###Options
+
+An `options` object can optionnaly be provide as the second argument.
+
+Supported Options:
+`generators`: An `key`/`value` object of generator functions.
+    `key` should match the `type` (or `logicalType`) and the callback folo
+    `value` should be a generator function `(type, context) => value` where
+        `type` is the content of the `type` field in the schema, either a `string` for simple type, or the type configuration for complex types
+        `context` is an object with contextual data, including the `generators`
+It is possible to override the default generators, and add support for extra types/logicalTypes by providing 
+
+## Supported Avro features
+
+Based on the Avro 1.9.0 [specification](https://avro.apache.org/docs/current/spec.html).
+
+- All primitive types
+- All logical types
+    - including custom logicalTypes using the `options` parameter. If a `logicalType` is missing a generator, data will be generated matching the underlying `type`.
+- All complex types
+    - Note that for `enum` and `union` types, the first element of the array will always be chosen. This allows the caller to drive the behaviour of the generator to return the expected type
+
+**Partial support for namespaces**
+
+Only union types are namespaced, unconditionally.
+
+
+**Aliases** are not currently supported.
+
