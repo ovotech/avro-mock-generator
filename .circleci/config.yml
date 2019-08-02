@@ -1,0 +1,70 @@
+version: 2
+defaults: &defaults
+  docker:
+    - image: circleci/node:10
+
+npmrc: &npmrc
+  run: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
+
+restore-cache: &restore-cache
+  restore_cache:
+    keys:
+      - v1-{{ checksum "yarn.lock" }}
+
+save-cache: &save-cache
+  save_cache:
+    key: v1-{{ checksum "yarn.lock" }}
+    paths:
+      - ~/.cache
+
+jobs:
+  test:
+    <<: *defaults
+    steps:
+      - checkout
+      - *restore-cache
+      - run: yarn config set yarn-offline-mirror ~/.cache/yarn
+      - run: yarn
+      - *save-cache
+      - run: yarn build
+      - run: yarn test
+      - run: yarn validate
+
+  publish:
+    <<: *defaults
+    steps:
+      - checkout
+      - *restore-cache
+      - *npmrc
+      - run: yarn config set yarn-offline-mirror ~/.cache/yarn
+      - run: yarn --frozen-lockfile
+      - run: yarn build
+      - run: git config user.email "ovotech-ci@ovoenergy.com"
+      - run: git config user.name "Ovotech CI"
+      - run: yarn publish --new-version $CIRCLE_TAG
+
+workflows:
+  version: 2
+  test:
+    jobs:
+      - test:
+          filters:
+            branches:
+              ignore: master
+  deploy:
+    jobs:
+      - test:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /.*/
+
+      - publish:
+          requires:
+            - test
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /.*/
