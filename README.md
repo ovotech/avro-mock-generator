@@ -4,8 +4,6 @@ Create mock messages from Avro schemas.
 
 ## Usage
 
-## Simple usage
-
 Call the generator with the schema:
 
 ```
@@ -22,17 +20,16 @@ console.log(generateData(schema));
 
 All fields will contain randomly generated data that respects their type.
 
-###Options
+### Options
 
 An `options` object can optionnaly be provide as the second argument.
 
 Supported Options:
-`generators`: An `key`/`value` object of generator functions.
-`key` should match the `type` (or `logicalType`) and the callback folo
-`value` should be a generator function `(type, context) => value` where
-`type` is the content of the `type` field in the schema, either a `string` for simple type, or the type configuration for complex types
-`context` is an object with contextual data, including the `generators`
-It is possible to override the default generators, and add support for extra types/logicalTypes by providing
+
+- `generators`: An `key`/`value` object of generator functions.
+  - `key`: the `type` (or `logicalType`)
+  - `value`: should be a generator function `(type, context) => value` where - `type`: the content of the `type` field in the schema, either a `string` for simple type, or the type configuration for complex types - `context`: an object with contextual data, including the `generators`
+    It is possible to override the default generators, and add support for extra types/logicalTypes by providing
 
 ## Supported Avro features
 
@@ -44,9 +41,7 @@ Based on the Avro 1.9.0 [specification](https://avro.apache.org/docs/current/spe
 - All complex types
   - Note that for `enum` and `union` types, the first element of the array will always be chosen. This allows the caller to drive the behaviour of the generator to return the expected type
 
-**Partial support for namespaces**
-
-Only union types are namespaced, unconditionally.
+**Partial support for namespaces**. Only union types are namespaced, unconditionally.
 
 **Aliases** are not currently supported.
 
