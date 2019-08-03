@@ -1,4 +1,4 @@
-import isuuid from 'isuuid'
+import isuuid from 'isuuid';
 
 import generateData from '../src/index';
 
@@ -17,15 +17,27 @@ describe('Avro mock data generator', () => {
         { name: 'bytes', type: 'bytes' },
         { name: 'array', type: { type: 'array', items: 'string' } },
         { name: 'map', type: { type: 'map', values: 'int' } },
-        { name: 'fixed', type: { type: 'fixed', size: 16} },
-        { name: 'uuid', type: { type: 'string', logicalType: 'uuid'} },
-        { name: 'decimal', type: { type: 'bytes', logicalType: 'decimal'} },
-        { name: 'time-millis', type: { type: 'int', logicalType: 'time-millis'} },
-        { name: 'time-micros', type: { type: 'long', logicalType: 'time-micros'} },
-        { name: 'timestamp-millis', type: { type: 'long', logicalType: 'timestamp-millis'} },
-        { name: 'timestamp-micros', type: { type: 'long', logicalType: 'timestamp-micros'} },
-        { name: 'duration', type: { type: 'fixed', logicalType: 'duration'} },
-        { name: 'date', type: { type: 'int', logicalType: 'date'} },
+        { name: 'fixed', type: { type: 'fixed', size: 16 } },
+        { name: 'uuid', type: { type: 'string', logicalType: 'uuid' } },
+        { name: 'decimal', type: { type: 'bytes', logicalType: 'decimal' } },
+        {
+          name: 'time-millis',
+          type: { type: 'int', logicalType: 'time-millis' },
+        },
+        {
+          name: 'time-micros',
+          type: { type: 'long', logicalType: 'time-micros' },
+        },
+        {
+          name: 'timestamp-millis',
+          type: { type: 'long', logicalType: 'timestamp-millis' },
+        },
+        {
+          name: 'timestamp-micros',
+          type: { type: 'long', logicalType: 'timestamp-micros' },
+        },
+        { name: 'duration', type: { type: 'fixed', logicalType: 'duration' } },
+        { name: 'date', type: { type: 'int', logicalType: 'date' } },
       ],
     });
 
@@ -49,21 +61,23 @@ describe('Avro mock data generator', () => {
       expect.arrayContaining([expect.any(Number)]),
     );
 
-    expect(typeof result.fixed).toEqual('string')
-    expect(result.fixed).toHaveLength(16)
+    expect(typeof result.fixed).toEqual('string');
+    expect(result.fixed).toHaveLength(16);
 
-    expect(isuuid(result.uuid)).toBe(true)
+    expect(isuuid(result.uuid)).toBe(true);
 
     expect(result).toMatchObject({ decimal: expect.any(Buffer) });
-    expect(typeof result.decimal.readIntBE(0, result.decimal.length)).toEqual('number')
+    expect(typeof result.decimal.readIntBE(0, result.decimal.length)).toEqual(
+      'number',
+    );
 
     expect(result).toMatchObject({ 'time-millis': expect.any(Number) });
     expect(result).toMatchObject({ 'time-micros': expect.any(Number) });
     expect(result).toMatchObject({ 'timestamp-millis': expect.any(Number) });
     expect(result).toMatchObject({ 'timestamp-micros': expect.any(Number) });
 
-    expect(typeof result.duration).toEqual('string')
-    expect(result.duration).toHaveLength(12)
+    expect(typeof result.duration).toEqual('string');
+    expect(result.duration).toHaveLength(12);
   });
 
   it('can parse a basic schema', () => {
@@ -90,7 +104,7 @@ describe('Avro mock data generator', () => {
     expect(result).toEqual({ farm: { nbChickens: expect.any(Number) } });
   });
 
-  it('support union types', () => {
+  it('supports union types', () => {
     const result = generateData({
       type: 'record',
       fields: [
@@ -107,11 +121,11 @@ describe('Avro mock data generator', () => {
       ],
     });
     expect(result).toEqual({
-      CountryFarm: { nbChickens: expect.any(Number) },
+      country: { CountryFarm: { nbChickens: expect.any(Number) } },
     });
   });
 
-  it('support union types with a namespace', () => {
+  it('supports union types with a namespace', () => {
     const result = generateData({
       type: 'record',
       namespace: 'com.farms',
@@ -129,7 +143,7 @@ describe('Avro mock data generator', () => {
       ],
     });
     expect(result).toEqual({
-      'com.farms.CountryFarm': { nbChickens: expect.any(Number) },
+      farms: { 'com.farms.CountryFarm': { nbChickens: expect.any(Number) } },
     });
   });
 
@@ -156,11 +170,11 @@ describe('Avro mock data generator', () => {
       ],
     });
     expect(result).toEqual({
-      CountryFarm: { nbChickens: expect.any(Number) },
+      farm: { CountryFarm: { nbChickens: expect.any(Number) } },
     });
   });
 
-  it('support enum types', () => {
+  it('supports enum types', () => {
     const result = generateData({
       type: 'record',
       fields: [
@@ -204,10 +218,13 @@ describe('Avro mock data generator', () => {
   });
 
   it('allows custom generators', () => {
-    const result = generateData({
-      type: 'record',
-      fields: [{ name: 'chickenName', type: 'string' }],
-    }, { generators: { 'string': () => 'henry'}});
-    expect(result).toEqual({ chickenName: 'henry'});
-  })
+    const result = generateData(
+      {
+        type: 'record',
+        fields: [{ name: 'chickenName', type: 'string' }],
+      },
+      { generators: { string: () => 'henry' } },
+    );
+    expect(result).toEqual({ chickenName: 'henry' });
+  });
 });
