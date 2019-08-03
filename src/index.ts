@@ -79,7 +79,9 @@ function generateRecord({ fields, namespace }, context) {
       const namespacedName = namespace
         ? `${namespace}.${chosenType.name}`
         : chosenType.name;
-      record[namespacedName] = generateDataForType(chosenType, context);
+      record[name] = {
+        [namespacedName]: generateDataForType(chosenType, context),
+      };
     } else {
       record[name] = generateDataForType(type, context);
     }
@@ -88,7 +90,7 @@ function generateRecord({ fields, namespace }, context) {
   }, {});
 }
 
-export type Generator = (typeDef: any, generators: Generator) => any;
+export type Generator = (typeDef: any, context: Context) => any;
 export type Generators = {
   [key: string]: Generator;
 };
