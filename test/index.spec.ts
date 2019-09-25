@@ -174,6 +174,36 @@ describe('Avro mock data generator', () => {
     });
   });
 
+  it('supports top level union types', () => {
+    const result = generateData([
+      {
+        type: 'record',
+        name: 'Owners',
+        namespace: 'com.farms',
+        fields: [
+          {
+            name: 'name',
+            type: 'string',
+          },
+        ],
+      },
+      {
+        type: 'record2',
+        namespace: 'com.farms',
+        name: 'Animals',
+        fields: [
+          {
+            name: 'breed',
+            type: 'string',
+          },
+        ],
+      },
+    ]);
+    expect(result).toEqual({
+      'com.farms.Owners': { name: expect.any(String) },
+    });
+  });
+
   it('supports enum types', () => {
     const result = generateData({
       type: 'record',
@@ -227,4 +257,6 @@ describe('Avro mock data generator', () => {
     );
     expect(result).toEqual({ chickenName: 'henry' });
   });
+
+  // TODO test references to previous schemas
 });

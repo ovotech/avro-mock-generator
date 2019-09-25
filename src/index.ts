@@ -68,20 +68,32 @@ function generateDataForType(type, context) {
   throw new Error(`Unknown type ${type}`);
 }
 
-function generateRecord({ fields, namespace }, context) {
+function generateUnionType(types: Array<any>, namespace, context) {
+  /* union type, always choose the first one
+   * so that the caller can be in control of which type
+   * of the union is being used
+   */
+  const chosenType = types[0];
+  const chosenNamespace = namespace || chosenType.namespace;
+  const namespacedName = chosenNamespace
+    ? `${chosenNamespace}.${chosenType.name}`
+    : chosenType.name;
+
+  return {
+    [namespacedName]: generateDataForType(chosenType, context),
+  };
+}
+
+function generateRecord(avroSchema, context) {
+  if (Array.isArray(avroSchema)) {
+    return generateUnionType(avroSchema, undefined, context);
+  }
+
+  const { fields, namespace } = avroSchema;
+
   return fields.reduce((record, { name, type }) => {
     if (Array.isArray(type)) {
-      /* union type, always choose the first one
-       * so that the caller can be in control of which type
-       * of the union is being used
-       */
-      const chosenType = type[0];
-      const namespacedName = namespace
-        ? `${namespace}.${chosenType.name}`
-        : chosenType.name;
-      record[name] = {
-        [namespacedName]: generateDataForType(chosenType, context),
-      };
+      record[name] = generateUnionType(type, namespace, context);
     } else {
       record[name] = generateDataForType(type, context);
     }
