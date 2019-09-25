@@ -174,6 +174,67 @@ describe('Avro mock data generator', () => {
     });
   });
 
+  it('lets the caller pick union by short name', () => {
+    // 1/1000 chances that this test falsely pass is deemed acceptable, but you can always up the number
+    const unionType = Array(1000).fill({
+      type: 'record',
+      name: 'CityFarm',
+      fields: [{ name: 'nbPidgeons', type: 'int' }],
+    });
+    unionType[550] = {
+      type: 'record',
+      name: 'CountryFarm',
+      fields: [{ name: 'nbChickens', type: 'int' }],
+    };
+
+    const result = generateData(
+      {
+        type: 'record',
+        fields: [
+          {
+            name: 'farm',
+            type: unionType,
+          },
+        ],
+      },
+      { pickUnion: ['CountryFarm'] },
+    );
+    expect(result).toEqual({
+      farm: { CountryFarm: { nbChickens: expect.any(Number) } },
+    });
+  });
+
+  it('lets the caller pick union by full name', () => {
+    // 1/1000 chances that this test falsely pass is deemed acceptable, but you can always up the number
+    const unionType = Array(1000).fill({
+      type: 'record',
+      name: 'CityFarm',
+      fields: [{ name: 'nbPidgeons', type: 'int' }],
+    });
+    unionType[550] = {
+      type: 'record',
+      name: 'CountryFarm',
+      fields: [{ name: 'nbChickens', type: 'int' }],
+    };
+
+    const result = generateData(
+      {
+        type: 'record',
+        namespace: 'my.lovely',
+        fields: [
+          {
+            name: 'farm',
+            type: unionType,
+          },
+        ],
+      },
+      { pickUnion: ['my.lovely.CountryFarm'] },
+    );
+    expect(result).toEqual({
+      farm: { 'my.lovely.CountryFarm': { nbChickens: expect.any(Number) } },
+    });
+  });
+
   it('supports top level union types', () => {
     const result = generateData([
       {

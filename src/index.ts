@@ -74,18 +74,26 @@ function generateDataForType(type, context) {
 }
 
 function generateUnionType(types: Array<any>, namespace, context) {
-  /* union type, always choose the first one
-   * so that the caller can be in control of which type
-   * of the union is being used
-   */
-  const chosenType = types[0];
-  const chosenNamespace = namespace || chosenType.namespace;
-  const namespacedName = chosenNamespace
-    ? `${chosenNamespace}.${chosenType.name}`
-    : chosenType.name;
+  const namespaced = types.map(type => {
+    const tNamespace = namespace || type.namespace;
+    const namespacedName = tNamespace
+      ? `${tNamespace}.${type.name}`
+      : type.name;
 
+    return {
+      type,
+      namespacedName,
+    };
+  });
+
+  const chosenType =
+    namespaced.find(
+      ({ namespacedName, type }) =>
+        context.pickUnion.includes(namespacedName) ||
+        context.pickUnion.includes(type.name),
+    ) || namespaced[0];
   return {
-    [namespacedName]: generateDataForType(chosenType, context),
+    [chosenType.namespacedName]: generateDataForType(chosenType.type, context),
   };
 }
 
@@ -117,6 +125,7 @@ export type Context = {
 };
 export type Options = {
   generators?: Generators;
+  pickUnion?: Array<string>;
 };
 
 type Registry = {
@@ -149,10 +158,19 @@ function buildRegistry(registry, type) {
   return registry;
 }
 
+const defaultOptions = {
+  pickUnion: [],
+};
+
 export default <T = any>(schema: any, options: Options = {}) => {
-  const { generators } = options;
+  const { generators, pickUnion } = {
+    ...defaultOptions,
+    ...options,
+  };
+
   return generateRecord(schema, {
     registry: buildRegistry({}, schema),
+    pickUnion,
     generators: {
       ...defaultGenerators,
       ...(generators || {}),
