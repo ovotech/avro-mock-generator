@@ -30,6 +30,7 @@ Supported Options:
   - `key`: the `type` (or `logicalType`)
   - `value`: should be a generator function `(type, context) => value` where - `type`: the content of the `type` field in the schema, either a `string` for simple type, or the type configuration for complex types - `context`: an object with contextual data, including the `generators`
     It is possible to override the default generators, and add support for extra types/logicalTypes by providing
+- `pickUnion`: Array of strings to drive which member of union type to choose. Can be the short name of fully namespaced names. When this option is not provided, the first element in the union will be chosen
 
 ## Supported Avro features
 
@@ -39,11 +40,10 @@ Based on the Avro 1.9.0 [specification](https://avro.apache.org/docs/current/spe
 - All logical types
   - including custom logicalTypes using the `options` parameter. If a `logicalType` is missing a generator, data will be generated matching the underlying `type`.
 - All complex types
-  - Note that for `enum` and `union` types, the first element of the array will always be chosen. This allows the caller to drive the behaviour of the generator to return the expected type
+  - Note that for `enum` types, the first element of the array will always be chosen.
+- Type Alias
 
 **Partial support for namespaces**. Only union types are namespaced, unconditionally.
-
-**Aliases** are not currently supported.
 
 ## Contributing
 
