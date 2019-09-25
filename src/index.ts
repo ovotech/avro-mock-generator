@@ -105,11 +105,9 @@ function generateRecord(avroSchema, context) {
   const { fields, namespace } = avroSchema;
 
   return fields.reduce((record, { name, type }) => {
-    if (Array.isArray(type)) {
-      record[name] = generateUnionType(type, namespace, context);
-    } else {
-      record[name] = generateDataForType(type, context);
-    }
+    record[name] = Array.isArray(type)
+      ? generateUnionType(type, namespace, context)
+      : generateDataForType(type, context);
 
     return record;
   }, {});
