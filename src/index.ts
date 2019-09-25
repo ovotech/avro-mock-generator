@@ -65,6 +65,11 @@ function generateDataForType(type, context) {
     }
   }
 
+  const alias = typeof type === 'string' ? type : type.type;
+  if (context.registry[alias]) {
+    return generateRecord(context.registry[alias], context);
+  }
+
   throw new Error(`Unknown type ${type}`);
 }
 
@@ -108,14 +113,46 @@ export type Generators = {
 };
 export type Context = {
   generators: Generators;
+  registry: Registry;
 };
 export type Options = {
   generators?: Generators;
 };
 
+type Registry = {
+  [key: string]: any;
+};
+
+function buildRegistry(registry, type) {
+  if (Array.isArray(type)) {
+    return type.reduce(buildRegistry, registry);
+  }
+
+  if (typeof type.type === 'object') {
+    return buildRegistry(registry, type.type);
+  }
+
+  const { fields, namespace, name } = type;
+
+  if (name) {
+    registry[name] = type;
+  }
+
+  if (name && namespace) {
+    registry[`${namespace}.${name}`] = type;
+  }
+
+  if (fields) {
+    fields.reduce(buildRegistry, registry);
+  }
+
+  return registry;
+}
+
 export default <T = any>(schema: any, options: Options = {}) => {
   const { generators } = options;
   return generateRecord(schema, {
+    registry: buildRegistry({}, schema),
     generators: {
       ...defaultGenerators,
       ...(generators || {}),

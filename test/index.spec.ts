@@ -258,5 +258,52 @@ describe('Avro mock data generator', () => {
     expect(result).toEqual({ chickenName: 'henry' });
   });
 
-  // TODO test references to previous schemas
+  it('supports type alias', () => {
+    const result = generateData({
+      type: 'record',
+      fields: [
+        {
+          name: 'Rooster',
+          type: 'chicken',
+        },
+        {
+          name: 'hen',
+          type: {
+            type: 'record',
+            name: 'chicken',
+            fields: [{ name: 'chickenName', type: 'string' }],
+          },
+        },
+      ],
+    });
+    expect(result).toEqual({
+      Rooster: { chickenName: expect.any(String) },
+      hen: { chickenName: expect.any(String) },
+    });
+  });
+
+  it('supports fully qualified type alias', () => {
+    const result = generateData({
+      type: 'record',
+      fields: [
+        {
+          name: 'Rooster',
+          type: 'space.chicken',
+        },
+        {
+          name: 'hen',
+          type: {
+            type: 'record',
+            name: 'chicken',
+            namespace: 'space',
+            fields: [{ name: 'chickenName', type: 'string' }],
+          },
+        },
+      ],
+    });
+    expect(result).toEqual({
+      Rooster: { chickenName: expect.any(String) },
+      hen: { chickenName: expect.any(String) },
+    });
+  });
 });
