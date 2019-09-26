@@ -174,6 +174,97 @@ describe('Avro mock data generator', () => {
     });
   });
 
+  it('lets the caller pick union by short name', () => {
+    // 1/1000 chances that this test falsely pass is deemed acceptable, but you can always up the number
+    const unionType = Array(1000).fill({
+      type: 'record',
+      name: 'CityFarm',
+      fields: [{ name: 'nbPidgeons', type: 'int' }],
+    });
+    unionType[550] = {
+      type: 'record',
+      name: 'CountryFarm',
+      fields: [{ name: 'nbChickens', type: 'int' }],
+    };
+
+    const result = generateData(
+      {
+        type: 'record',
+        fields: [
+          {
+            name: 'farm',
+            type: unionType,
+          },
+        ],
+      },
+      { pickUnion: ['CountryFarm'] },
+    );
+    expect(result).toEqual({
+      farm: { CountryFarm: { nbChickens: expect.any(Number) } },
+    });
+  });
+
+  it('lets the caller pick union by full name', () => {
+    // 1/1000 chances that this test falsely pass is deemed acceptable, but you can always up the number
+    const unionType = Array(1000).fill({
+      type: 'record',
+      name: 'CityFarm',
+      fields: [{ name: 'nbPidgeons', type: 'int' }],
+    });
+    unionType[550] = {
+      type: 'record',
+      name: 'CountryFarm',
+      fields: [{ name: 'nbChickens', type: 'int' }],
+    };
+
+    const result = generateData(
+      {
+        type: 'record',
+        namespace: 'my.lovely',
+        fields: [
+          {
+            name: 'farm',
+            type: unionType,
+          },
+        ],
+      },
+      { pickUnion: ['my.lovely.CountryFarm'] },
+    );
+    expect(result).toEqual({
+      farm: { 'my.lovely.CountryFarm': { nbChickens: expect.any(Number) } },
+    });
+  });
+
+  it('supports top level union types', () => {
+    const result = generateData([
+      {
+        type: 'record',
+        name: 'Owners',
+        namespace: 'com.farms',
+        fields: [
+          {
+            name: 'name',
+            type: 'string',
+          },
+        ],
+      },
+      {
+        type: 'record',
+        namespace: 'com.farms',
+        name: 'Animals',
+        fields: [
+          {
+            name: 'breed',
+            type: 'string',
+          },
+        ],
+      },
+    ]);
+    expect(result).toEqual({
+      'com.farms.Owners': { name: expect.any(String) },
+    });
+  });
+
   it('supports enum types', () => {
     const result = generateData({
       type: 'record',
@@ -226,5 +317,54 @@ describe('Avro mock data generator', () => {
       { generators: { string: () => 'henry' } },
     );
     expect(result).toEqual({ chickenName: 'henry' });
+  });
+
+  it('supports type alias', () => {
+    const result = generateData({
+      type: 'record',
+      fields: [
+        {
+          name: 'Rooster',
+          type: 'chicken',
+        },
+        {
+          name: 'hen',
+          type: {
+            type: 'record',
+            name: 'chicken',
+            fields: [{ name: 'chickenName', type: 'string' }],
+          },
+        },
+      ],
+    });
+    expect(result).toEqual({
+      Rooster: { chickenName: expect.any(String) },
+      hen: { chickenName: expect.any(String) },
+    });
+  });
+
+  it('supports fully qualified type alias', () => {
+    const result = generateData({
+      type: 'record',
+      fields: [
+        {
+          name: 'Rooster',
+          type: 'space.chicken',
+        },
+        {
+          name: 'hen',
+          type: {
+            type: 'record',
+            name: 'chicken',
+            namespace: 'space',
+            fields: [{ name: 'chickenName', type: 'string' }],
+          },
+        },
+      ],
+    });
+    expect(result).toEqual({
+      Rooster: { chickenName: expect.any(String) },
+      hen: { chickenName: expect.any(String) },
+    });
   });
 });

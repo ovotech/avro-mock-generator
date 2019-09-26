@@ -65,26 +65,49 @@ function generateDataForType(type, context) {
     }
   }
 
+  const alias = typeof type === 'string' ? type : type.type;
+  if (context.registry[alias]) {
+    return generateRecord(context.registry[alias], context);
+  }
+
   throw new Error(`Unknown type ${type}`);
 }
 
-function generateRecord({ fields, namespace }, context) {
+function generateUnionType(types: Array<any>, namespace, context) {
+  const namespaced = types.map(type => {
+    const tNamespace = namespace || type.namespace;
+    const namespacedName = tNamespace
+      ? `${tNamespace}.${type.name}`
+      : type.name;
+
+    return {
+      type,
+      namespacedName,
+    };
+  });
+
+  const chosenType =
+    namespaced.find(
+      ({ namespacedName, type }) =>
+        context.pickUnion.includes(namespacedName) ||
+        context.pickUnion.includes(type.name),
+    ) || namespaced[0];
+  return {
+    [chosenType.namespacedName]: generateDataForType(chosenType.type, context),
+  };
+}
+
+function generateRecord(avroSchema, context) {
+  if (Array.isArray(avroSchema)) {
+    return generateUnionType(avroSchema, undefined, context);
+  }
+
+  const { fields, namespace } = avroSchema;
+
   return fields.reduce((record, { name, type }) => {
-    if (Array.isArray(type)) {
-      /* union type, always choose the first one
-       * so that the caller can be in control of which type
-       * of the union is being used
-       */
-      const chosenType = type[0];
-      const namespacedName = namespace
-        ? `${namespace}.${chosenType.name}`
-        : chosenType.name;
-      record[name] = {
-        [namespacedName]: generateDataForType(chosenType, context),
-      };
-    } else {
-      record[name] = generateDataForType(type, context);
-    }
+    record[name] = Array.isArray(type)
+      ? generateUnionType(type, namespace, context)
+      : generateDataForType(type, context);
 
     return record;
   }, {});
@@ -96,14 +119,56 @@ export type Generators = {
 };
 export type Context = {
   generators: Generators;
+  registry: Registry;
 };
 export type Options = {
   generators?: Generators;
+  pickUnion?: Array<string>;
+};
+
+type Registry = {
+  [key: string]: any;
+};
+
+function buildRegistry(registry, type) {
+  if (Array.isArray(type)) {
+    return type.reduce(buildRegistry, registry);
+  }
+
+  if (typeof type.type === 'object') {
+    return buildRegistry(registry, type.type);
+  }
+
+  const { fields, namespace, name } = type;
+
+  if (name) {
+    registry[name] = type;
+  }
+
+  if (name && namespace) {
+    registry[`${namespace}.${name}`] = type;
+  }
+
+  if (fields) {
+    fields.reduce(buildRegistry, registry);
+  }
+
+  return registry;
+}
+
+const defaultOptions = {
+  pickUnion: [],
 };
 
 export default <T = any>(schema: any, options: Options = {}) => {
-  const { generators } = options;
+  const { generators, pickUnion } = {
+    ...defaultOptions,
+    ...options,
+  };
+
   return generateRecord(schema, {
+    registry: buildRegistry({}, schema),
+    pickUnion,
     generators: {
       ...defaultGenerators,
       ...(generators || {}),
