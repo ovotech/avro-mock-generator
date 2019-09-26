@@ -249,7 +249,7 @@ describe('Avro mock data generator', () => {
         ],
       },
       {
-        type: 'record2',
+        type: 'record',
         namespace: 'com.farms',
         name: 'Animals',
         fields: [
