@@ -92,9 +92,20 @@ function generateUnionType(types: Array<any>, namespace, context) {
         context.pickUnion.includes(namespacedName) ||
         context.pickUnion.includes(type.name),
     ) || namespaced[0];
-  return {
-    [chosenType.namespacedName]: generateDataForType(chosenType.type, context),
-  };
+
+  if (
+    typeof chosenType.type === 'object' &&
+    !Array.isArray(chosenType.type) &&
+    isRecordType(chosenType.type)
+  ) {
+    return {
+      [chosenType.namespacedName]: generateDataForType(
+        chosenType.type,
+        context,
+      ),
+    };
+  }
+  return generateDataForType(chosenType.type, context);
 }
 
 function generateRecord(avroSchema, context) {
@@ -112,6 +123,9 @@ function generateRecord(avroSchema, context) {
     return record;
   }, {});
 }
+
+const isRecordType = (type: any): boolean =>
+  typeof type === 'object' && 'type' in type && type.type === 'record';
 
 export type Generator = (typeDef: any, context: Context) => any;
 export type Generators = {

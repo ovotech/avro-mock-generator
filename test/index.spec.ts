@@ -104,7 +104,22 @@ describe('Avro mock data generator', () => {
     expect(result).toEqual({ farm: { nbChickens: expect.any(Number) } });
   });
 
-  it('supports union types', () => {
+  it('supports simple union types', () => {
+    const result = generateData({
+      type: 'record',
+      fields: [
+        {
+          name: 'country',
+          type: ['int', 'null'],
+        },
+      ],
+    });
+    expect(result).toEqual({
+      country: expect.any(Number),
+    });
+  });
+
+  it('supports union types with records', () => {
     const result = generateData({
       type: 'record',
       fields: [
