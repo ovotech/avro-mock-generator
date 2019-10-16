@@ -3,7 +3,7 @@ import { randomFillSync } from 'crypto';
 import uuid from 'uuid/v4';
 
 const defaultGenerators = {
-  int: () => Math.floor(Math.random() * Number.MAX_SAFE_INTEGER),
+  int: () => Math.floor(Math.random() * 2 ** 31),
   // This  doesn't technically produce a long but JS doesn't support those, so it's likely the user will have a logicalType on top of it
   long: () => Math.floor(Math.random() * Number.MAX_SAFE_INTEGER),
   double: () => Math.random(),
