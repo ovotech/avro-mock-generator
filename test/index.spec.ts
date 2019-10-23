@@ -136,7 +136,7 @@ describe('Avro mock data generator', () => {
       ],
     });
     expect(result).toEqual({
-      country: { CountryFarm: { nbChickens: expect.any(Number) } },
+      country: { nbChickens: expect.any(Number) },
     });
   });
 
@@ -153,12 +153,43 @@ describe('Avro mock data generator', () => {
               name: 'CountryFarm',
               fields: [{ name: 'nbChickens', type: 'int' }],
             },
+            {
+              type: 'record',
+              name: 'CityFarm',
+              fields: [{ name: 'nbChickens', type: 'int' }],
+            },
           ],
         },
       ],
     });
     expect(result).toEqual({
       farms: { 'com.farms.CountryFarm': { nbChickens: expect.any(Number) } },
+    });
+  });
+
+  it('should not qualify names if there is only one record in a sea of non-record union members', () => {
+    const result = generateData(
+      {
+        type: 'record',
+        namespace: 'com.farms',
+        fields: [
+          {
+            name: 'farms',
+            type: [
+              'null',
+              {
+                type: 'record',
+                name: 'CountryFarm',
+                fields: [{ name: 'nbChickens', type: 'int' }],
+              },
+            ],
+          },
+        ],
+      },
+      { pickUnion: ['CountryFarm'] },
+    );
+    expect(result).toEqual({
+      farms: { nbChickens: expect.any(Number) },
     });
   });
 
