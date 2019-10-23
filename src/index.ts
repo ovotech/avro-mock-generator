@@ -74,6 +74,9 @@ function generateDataForType(type, context) {
 }
 
 function generateUnionType(types: Array<any>, namespace, context) {
+  const needsNamespacing =
+    types.filter(type => type && type.type === 'record').length > 1;
+
   const namespaced = types.map(type => {
     const tNamespace = namespace || type.namespace;
     const namespacedName = tNamespace
@@ -96,7 +99,8 @@ function generateUnionType(types: Array<any>, namespace, context) {
   if (
     typeof chosenType.type === 'object' &&
     !Array.isArray(chosenType.type) &&
-    isRecordType(chosenType.type)
+    isRecordType(chosenType.type) &&
+    needsNamespacing
   ) {
     return {
       [chosenType.namespacedName]: generateDataForType(
