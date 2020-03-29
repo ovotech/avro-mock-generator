@@ -30,8 +30,9 @@
   "homepage": "https://github.com/ovotech/avro-mock-generator#readme",
   "devDependencies": {
     "@types/jest": "^24.0.16",
+    "@types/mersenne-twister": "^1.1.2",
     "@types/node": "^12.6.8",
-    "@types/uuid": "^3.4.5",
+    "@types/uuid": "^7.0.2",
     "husky": "^3.0.2",
     "isuuid": "^0.1.0",
     "jest": "^24.8.0",
@@ -43,6 +44,7 @@
     "typescript": "^3.5.3"
   },
   "dependencies": {
-    "uuid": "^3.3.2"
+    "mersenne-twister": "^1.1.0",
+    "uuid": "^7.0.2"
   }
 }

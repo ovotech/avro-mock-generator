@@ -31,6 +31,7 @@ Supported Options:
   - `value`: should be a generator function `(type, context) => value` where - `type`: the content of the `type` field in the schema, either a `string` for simple type, or the type configuration for complex types - `context`: an object with contextual data, including the `generators`
     It is possible to override the default generators, and add support for extra types/logicalTypes by providing
 - `pickUnion`: Array of strings to drive which member of union type to choose. Can be the short name of fully namespaced names. When this option is not provided, the first element in the union will be chosen
+- `seed`: A number used to seed the random generators for supporting reproducible generations.
 
 ## Supported Avro features
 
