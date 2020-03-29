@@ -2,44 +2,46 @@ import isuuid from 'isuuid';
 
 import generateData from '../src/index';
 
+const schemaForAllTypes = {
+  type: 'record',
+  fields: [
+    { name: 'int', type: 'int' },
+    { name: 'long', type: 'long' },
+    { name: 'double', type: 'double' },
+    { name: 'float', type: 'float' },
+    { name: 'boolean', type: 'boolean' },
+    { name: 'null', type: 'null' },
+    { name: 'string', type: 'string' },
+    { name: 'bytes', type: 'bytes' },
+    { name: 'array', type: { type: 'array', items: 'string' } },
+    { name: 'map', type: { type: 'map', values: 'int' } },
+    { name: 'fixed', type: { type: 'fixed', size: 16 } },
+    { name: 'uuid', type: { type: 'string', logicalType: 'uuid' } },
+    { name: 'decimal', type: { type: 'bytes', logicalType: 'decimal' } },
+    {
+      name: 'time-millis',
+      type: { type: 'int', logicalType: 'time-millis' },
+    },
+    {
+      name: 'time-micros',
+      type: { type: 'long', logicalType: 'time-micros' },
+    },
+    {
+      name: 'timestamp-millis',
+      type: { type: 'long', logicalType: 'timestamp-millis' },
+    },
+    {
+      name: 'timestamp-micros',
+      type: { type: 'long', logicalType: 'timestamp-micros' },
+    },
+    { name: 'duration', type: { type: 'fixed', logicalType: 'duration' } },
+    { name: 'date', type: { type: 'int', logicalType: 'date' } },
+  ],
+};
+
 describe('Avro mock data generator', () => {
   it('supports all easily tested avro types', () => {
-    const result = generateData({
-      type: 'record',
-      fields: [
-        { name: 'int', type: 'int' },
-        { name: 'long', type: 'long' },
-        { name: 'double', type: 'double' },
-        { name: 'float', type: 'float' },
-        { name: 'boolean', type: 'boolean' },
-        { name: 'null', type: 'null' },
-        { name: 'string', type: 'string' },
-        { name: 'bytes', type: 'bytes' },
-        { name: 'array', type: { type: 'array', items: 'string' } },
-        { name: 'map', type: { type: 'map', values: 'int' } },
-        { name: 'fixed', type: { type: 'fixed', size: 16 } },
-        { name: 'uuid', type: { type: 'string', logicalType: 'uuid' } },
-        { name: 'decimal', type: { type: 'bytes', logicalType: 'decimal' } },
-        {
-          name: 'time-millis',
-          type: { type: 'int', logicalType: 'time-millis' },
-        },
-        {
-          name: 'time-micros',
-          type: { type: 'long', logicalType: 'time-micros' },
-        },
-        {
-          name: 'timestamp-millis',
-          type: { type: 'long', logicalType: 'timestamp-millis' },
-        },
-        {
-          name: 'timestamp-micros',
-          type: { type: 'long', logicalType: 'timestamp-micros' },
-        },
-        { name: 'duration', type: { type: 'fixed', logicalType: 'duration' } },
-        { name: 'date', type: { type: 'int', logicalType: 'date' } },
-      ],
-    });
+    const result = generateData(schemaForAllTypes);
 
     expect(result).toMatchObject({ int: expect.any(Number) });
     expect(result).toMatchObject({ float: expect.any(Number) });
@@ -412,5 +414,10 @@ describe('Avro mock data generator', () => {
       Rooster: { chickenName: expect.any(String) },
       hen: { chickenName: expect.any(String) },
     });
+  });
+
+  it('is supports seeding', () => {
+    const result = generateData(schemaForAllTypes, { seed: 123 });
+    expect(result).toMatchSnapshot();
   });
 });
