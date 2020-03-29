@@ -12,7 +12,6 @@ const defaultGenerators = {
   float: (_, { random }: Context) => random(),
   null: () => null,
   boolean: (_, { random }: Context) => Boolean(Math.round(random())),
-  // TODO seeded uuid support (or other random strings, eh
   string: (_, { uuid }: Context) => uuid(),
   bytes: (_, { uuid }: Context) => Buffer.from(uuid(), 'ascii'),
   array: ({ items }, context: Context) => [generateDataForType(items, context)],
@@ -52,8 +51,8 @@ function generateDecimal(_, { random }: Context) {
 }
 
 function generateFixed({ size }, { random }: Context) {
-  /* I don't really know bytes operations in jS
-   * So let's just cheat by overfilling size with 4bypes integers
+  /* I don't really know bytes operations in JS
+   * So let's just cheat by overfilling size with 4bytes integers
    * Buffer is clever enough to only retain the newest bytes and
    * match the desired length
    */
