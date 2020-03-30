@@ -33,6 +33,7 @@
     "@types/mersenne-twister": "^1.1.2",
     "@types/node": "^12.6.8",
     "@types/uuid": "^7.0.2",
+    "avsc": "^5.4.19",
     "husky": "^3.0.2",
     "isuuid": "^0.1.0",
     "jest": "^24.8.0",

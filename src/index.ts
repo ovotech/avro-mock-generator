@@ -1,41 +1,45 @@
+import { schema as avsc } from 'avsc';
 import mersenne = require('mersenne-twister');
 
 import uuid4 from 'uuid/v4';
 import uuid5 from 'uuid/v5';
 
 const defaultGenerators = {
-  int: (_, { random }: Context) => Math.floor(random() * 2 ** 31),
+  int: (_, { generators: { random } }: Context) =>
+    Math.floor(random() * 2 ** 31),
   // This  doesn't technically produce a long but JS doesn't support those, so it's likely the user will have a logicalType on top of it
-  long: (_, { random }: Context) =>
+  long: (_, { generators: { random } }: Context) =>
     Math.floor(random() * Number.MAX_SAFE_INTEGER),
-  double: (_, { random }: Context) => random(),
-  float: (_, { random }: Context) => random(),
+  double: (_, { generators: { random } }: Context) => random(),
+  float: (_, { generators: { random } }: Context) => random(),
   null: () => null,
-  boolean: (_, { random }: Context) => Boolean(Math.round(random())),
-  string: (_, { uuid }: Context) => uuid(),
-  bytes: (_, { uuid }: Context) => Buffer.from(uuid(), 'ascii'),
+  boolean: (_, { generators: { random } }: Context) =>
+    Boolean(Math.round(random())),
+  string: (_, { generators: { uuid } }: Context) => uuid(),
+  bytes: (_, { generators: { uuid } }: Context) => Buffer.from(uuid(), 'ascii'),
   array: ({ items }, context: Context) => [generateDataForType(items, context)],
   map: ({ values }, context: Context) => ({
-    [context.uuid()]: generateDataForType(values, context),
+    [context.generators.uuid()]: generateDataForType(values, context),
   }),
   enum: ({ symbols }) => symbols[0],
-  uuid: (_, { uuid }: Context) => uuid(),
+  uuid: () => uuid4(),
+  random: () => Math.random(),
   decimal: generateDecimal,
   fixed: generateFixed,
   record: generateRecord,
-  'time-millis': (_, { random }: Context) =>
+  'time-millis': (_, { generators: { random } }: Context) =>
     Math.floor(random() * Number.MAX_SAFE_INTEGER),
-  'time-micros': (_, { random }: Context) =>
+  'time-micros': (_, { generators: { random } }: Context) =>
     Math.floor(random() * Number.MAX_SAFE_INTEGER),
-  'timestamp-millis': (_, { random }: Context) =>
+  'timestamp-millis': (_, { generators: { random } }: Context) =>
     Math.floor(random() * Number.MAX_SAFE_INTEGER),
-  'timestamp-micros': (_, { random }: Context) =>
+  'timestamp-micros': (_, { generators: { random } }: Context) =>
     Math.floor(random() * Number.MAX_SAFE_INTEGER),
   duration: generateDuration,
-  date: (_, { random }: Context) => new Date(random()),
+  date: (_, { generators: { random } }: Context) => new Date(random()),
 };
 
-function generateDuration(_, { random }: Context) {
+function generateDuration(_, { generators: { random } }: Context) {
   const buf = new Buffer(12);
   buf.writeIntLE(random() * 2 ** 31, 0, 4);
   buf.writeIntLE(random() * 2 ** 31, 0, 4);
@@ -43,14 +47,14 @@ function generateDuration(_, { random }: Context) {
   return buf.toString('ascii');
 }
 
-function generateDecimal(_, { random }: Context) {
+function generateDecimal(_, { generators: { random } }: Context) {
   // this ignores scale and precision, probably ok but PR welcome!
   const buf = new Buffer(6);
   buf.writeIntBE(random(), 0, buf.length);
   return buf;
 }
 
-function generateFixed({ size }, { random }: Context) {
+function generateFixed({ size }, { generators: { random } }: Context) {
   /* I don't really know bytes operations in JS
    * So let's just cheat by overfilling size with 4bytes integers
    * Buffer is clever enough to only retain the newest bytes and
@@ -148,18 +152,23 @@ const isRecordType = (type: any): boolean =>
 
 export type Generator = (typeDef: any, context: Context) => any;
 export type Generators = {
+  random: () => number;
+  uuid: () => string;
   [key: string]: Generator;
 };
 export type Context = {
   generators: Generators;
   registry: Registry;
-  random: () => number;
-  uuid: () => string;
 };
+
+export type AvroMock<T = any> = (
+  schema: avsc.AvroSchema,
+  options?: Options,
+) => T;
+
 export type Options = {
-  generators?: Generators;
+  generators?: Partial<Generators>;
   pickUnion?: Array<string>;
-  seed?: number;
 };
 
 type Registry = {
@@ -194,32 +203,40 @@ function buildRegistry(registry, type) {
 
 const defaultOptions = {
   pickUnion: [],
-  seed: undefined,
 };
 
-export default <T = any>(schema: any, options: Options = {}) => {
+export function Seeded<T = any>(seed: number) {
+  const generator = new mersenne(seed);
+  const random = generator.random.bind(generator);
+  const uuidNamespace = '1b671a64-40d5-491e-99b0-da01ff1f3341';
+  const uuid = uuid5.bind(uuid5, seed.toString(), uuidNamespace);
+
+  return (schema: avsc.AvroSchema, options: Options = {}): T =>
+    generate(schema, {
+      ...options,
+      generators: {
+        uuid: () => uuid(),
+        random,
+        ...options.generators,
+      },
+    });
+}
+
+export default function generate<T = any>(
+  schema: avsc.AvroSchema,
+  options: Options = {},
+): T {
   const { generators, pickUnion } = {
     ...defaultOptions,
     ...options,
   };
-  let random: Context['random'] = Math.random;
-  let uuid: Context['uuid'] = uuid4;
-
-  if (options.seed) {
-    const generator = new mersenne(options.seed);
-    random = generator.random.bind(generator);
-    const uuidNamespace = '1b671a64-40d5-491e-99b0-da01ff1f3341';
-    uuid = uuid5.bind(uuid5, options.seed.toString(), uuidNamespace);
-  }
 
   return generateRecord(schema, {
     registry: buildRegistry({}, schema),
-    random,
     pickUnion,
-    uuid,
     generators: {
       ...defaultGenerators,
       ...(generators || {}),
     },
-  }) as T;
-};
+  });
+}
