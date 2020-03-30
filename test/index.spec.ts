@@ -1,9 +1,11 @@
+import { schema as avsc } from 'avsc';
 import isuuid from 'isuuid';
 
-import generateData from '../src/index';
+import avroMock, { Seeded } from '../src/index';
 
-const schemaForAllTypes = {
+const schemaForAllTypes: avsc.RecordType = {
   type: 'record',
+  name: 'test',
   fields: [
     { name: 'int', type: 'int' },
     { name: 'long', type: 'long' },
@@ -15,7 +17,7 @@ const schemaForAllTypes = {
     { name: 'bytes', type: 'bytes' },
     { name: 'array', type: { type: 'array', items: 'string' } },
     { name: 'map', type: { type: 'map', values: 'int' } },
-    { name: 'fixed', type: { type: 'fixed', size: 16 } },
+    { name: 'fixed', type: { type: 'fixed', size: 16 } as avsc.FixedType },
     { name: 'uuid', type: { type: 'string', logicalType: 'uuid' } },
     { name: 'decimal', type: { type: 'bytes', logicalType: 'decimal' } },
     {
@@ -34,14 +36,20 @@ const schemaForAllTypes = {
       name: 'timestamp-micros',
       type: { type: 'long', logicalType: 'timestamp-micros' },
     },
-    { name: 'duration', type: { type: 'fixed', logicalType: 'duration' } },
+    {
+      name: 'duration',
+      type: {
+        type: 'fixed',
+        logicalType: 'duration',
+      } as avsc.LogicalType,
+    },
     { name: 'date', type: { type: 'int', logicalType: 'date' } },
   ],
 };
 
 describe('Avro mock data generator', () => {
   it('supports all easily tested avro types', () => {
-    const result = generateData(schemaForAllTypes);
+    const result = avroMock(schemaForAllTypes);
 
     expect(result).toMatchObject({ int: expect.any(Number) });
     expect(result).toMatchObject({ float: expect.any(Number) });
@@ -83,15 +91,15 @@ describe('Avro mock data generator', () => {
   });
 
   it('can parse a basic schema', () => {
-    const result = generateData({
+    const result = avroMock({
       type: 'record',
       fields: [{ name: 'nbChickens', type: 'int' }],
-    });
+    } as avsc.AvroSchema);
     expect(result).toEqual({ nbChickens: expect.any(Number) });
   });
 
   it('can parse a record field', () => {
-    const result = generateData({
+    const result = avroMock({
       type: 'record',
       fields: [
         {
@@ -102,12 +110,12 @@ describe('Avro mock data generator', () => {
           },
         },
       ],
-    });
+    } as avsc.AvroSchema);
     expect(result).toEqual({ farm: { nbChickens: expect.any(Number) } });
   });
 
   it('supports simple union types', () => {
-    const result = generateData({
+    const result = avroMock({
       type: 'record',
       fields: [
         {
@@ -115,14 +123,14 @@ describe('Avro mock data generator', () => {
           type: ['int', 'null'],
         },
       ],
-    });
+    } as avsc.AvroSchema);
     expect(result).toEqual({
       country: expect.any(Number),
     });
   });
 
   it('supports union types with records', () => {
-    const result = generateData({
+    const result = avroMock({
       type: 'record',
       fields: [
         {
@@ -136,14 +144,14 @@ describe('Avro mock data generator', () => {
           ],
         },
       ],
-    });
+    } as avsc.AvroSchema);
     expect(result).toEqual({
       country: { nbChickens: expect.any(Number) },
     });
   });
 
   it('supports union types with a namespace', () => {
-    const result = generateData({
+    const result = avroMock({
       type: 'record',
       namespace: 'com.farms',
       fields: [
@@ -163,14 +171,14 @@ describe('Avro mock data generator', () => {
           ],
         },
       ],
-    });
+    } as avsc.AvroSchema);
     expect(result).toEqual({
       farms: { 'com.farms.CountryFarm': { nbChickens: expect.any(Number) } },
     });
   });
 
   it('should not qualify names if there is only one record in a sea of non-record union members', () => {
-    const result = generateData(
+    const result = avroMock(
       {
         type: 'record',
         namespace: 'com.farms',
@@ -187,7 +195,7 @@ describe('Avro mock data generator', () => {
             ],
           },
         ],
-      },
+      } as avsc.AvroSchema,
       { pickUnion: ['CountryFarm'] },
     );
     expect(result).toEqual({
@@ -208,7 +216,7 @@ describe('Avro mock data generator', () => {
       fields: [{ name: 'nbChickens', type: 'int' }],
     };
 
-    const result = generateData({
+    const result = avroMock({
       type: 'record',
       fields: [
         {
@@ -216,7 +224,7 @@ describe('Avro mock data generator', () => {
           type: unionType,
         },
       ],
-    });
+    } as avsc.AvroSchema);
     expect(result).toEqual({
       farm: { CountryFarm: { nbChickens: expect.any(Number) } },
     });
@@ -235,7 +243,7 @@ describe('Avro mock data generator', () => {
       fields: [{ name: 'nbChickens', type: 'int' }],
     };
 
-    const result = generateData(
+    const result = avroMock(
       {
         type: 'record',
         fields: [
@@ -244,7 +252,7 @@ describe('Avro mock data generator', () => {
             type: unionType,
           },
         ],
-      },
+      } as avsc.AvroSchema,
       { pickUnion: ['CountryFarm'] },
     );
     expect(result).toEqual({
@@ -265,7 +273,7 @@ describe('Avro mock data generator', () => {
       fields: [{ name: 'nbChickens', type: 'int' }],
     };
 
-    const result = generateData(
+    const result = avroMock(
       {
         type: 'record',
         namespace: 'my.lovely',
@@ -275,7 +283,7 @@ describe('Avro mock data generator', () => {
             type: unionType,
           },
         ],
-      },
+      } as avsc.AvroSchema,
       { pickUnion: ['my.lovely.CountryFarm'] },
     );
     expect(result).toEqual({
@@ -284,7 +292,7 @@ describe('Avro mock data generator', () => {
   });
 
   it('supports top level union types', () => {
-    const result = generateData([
+    const result = avroMock([
       {
         type: 'record',
         name: 'Owners',
@@ -314,7 +322,7 @@ describe('Avro mock data generator', () => {
   });
 
   it('supports enum types', () => {
-    const result = generateData({
+    const result = avroMock({
       type: 'record',
       fields: [
         {
@@ -322,7 +330,7 @@ describe('Avro mock data generator', () => {
           type: { type: 'enum', name: 'animals', symbols: ['Chicken'] },
         },
       ],
-    });
+    } as avsc.AvroSchema);
     expect(result).toEqual({
       farmAnimals: 'Chicken',
     });
@@ -333,7 +341,7 @@ describe('Avro mock data generator', () => {
     const symbols = Array(1000).fill('Cow');
     symbols[0] = 'Chicken';
 
-    const result = generateData({
+    const result = avroMock({
       type: 'record',
       fields: [
         {
@@ -341,7 +349,7 @@ describe('Avro mock data generator', () => {
           type: { type: 'enum', symbols },
         },
       ],
-    });
+    } as avsc.AvroSchema);
     expect(result).toEqual({
       farmAnimals: 'Chicken',
     });
@@ -353,22 +361,22 @@ describe('Avro mock data generator', () => {
       fields: [{ name: 'nbChickens', type: '3rd Kind' }],
     };
 
-    expect(() => generateData(schema)).toThrow('Unknown type');
+    expect(() => avroMock(schema as avsc.AvroSchema)).toThrow('Unknown type');
   });
 
   it('allows custom generators', () => {
-    const result = generateData(
+    const result = avroMock(
       {
         type: 'record',
         fields: [{ name: 'chickenName', type: 'string' }],
-      },
+      } as avsc.AvroSchema,
       { generators: { string: () => 'henry' } },
     );
     expect(result).toEqual({ chickenName: 'henry' });
   });
 
   it('supports type alias', () => {
-    const result = generateData({
+    const result = avroMock({
       type: 'record',
       fields: [
         {
@@ -384,7 +392,7 @@ describe('Avro mock data generator', () => {
           },
         },
       ],
-    });
+    } as avsc.AvroSchema);
     expect(result).toEqual({
       Rooster: { chickenName: expect.any(String) },
       hen: { chickenName: expect.any(String) },
@@ -392,7 +400,7 @@ describe('Avro mock data generator', () => {
   });
 
   it('supports fully qualified type alias', () => {
-    const result = generateData({
+    const result = avroMock({
       type: 'record',
       fields: [
         {
@@ -409,15 +417,25 @@ describe('Avro mock data generator', () => {
           },
         },
       ],
-    });
+    } as avsc.AvroSchema);
     expect(result).toEqual({
       Rooster: { chickenName: expect.any(String) },
       hen: { chickenName: expect.any(String) },
     });
   });
 
-  it('is supports seeding', () => {
-    const result = generateData(schemaForAllTypes, { seed: 123 });
-    expect(result).toMatchSnapshot();
+  describe('seeding', () => {
+    it('is supports seeding', () => {
+      const result = Seeded(123)(schemaForAllTypes);
+      expect(result).toMatchSnapshot();
+    });
+
+    it('generates more than one differente message using the same seed', () => {
+      const generator = Seeded(123);
+      const one = generator(schemaForAllTypes);
+      const two = generator(schemaForAllTypes);
+      expect(one).not.toMatchObject(two);
+      expect(two).toMatchSnapshot();
+    });
   });
 });
