@@ -167,7 +167,7 @@ export type AvroMock<T = any> = (
 ) => T;
 
 export type Options = {
-  generators?: Generators;
+  generators?: Partial<Generators>;
   pickUnion?: Array<string>;
 };
 
