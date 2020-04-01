@@ -18,10 +18,10 @@ const defaultGenerators = {
   string: (_, { generators: { uuid } }: Context) => uuid(),
   bytes: (_, { generators: { uuid } }: Context) => Buffer.from(uuid(), 'ascii'),
   array: ({ items }, context: Context) => [generateDataForType(items, context)],
-  map: ({ values }, context: Context) => ({
+  map: ({ type: { values } }, context: Context) => ({
     [context.generators.uuid()]: generateDataForType(values, context),
   }),
-  enum: ({ symbols }) => symbols[0],
+  enum: ({ type: { symbols } }) => symbols[0],
   uuid: () => uuid4(),
   random: () => Math.random(),
   decimal: generateDecimal,
@@ -59,7 +59,10 @@ function generateDecimal(_, { generators: { random } }: Context) {
   return buf;
 }
 
-function generateFixed({ size }, { generators: { random } }: Context) {
+function generateFixed(
+  { type: { size } },
+  { generators: { random } }: Context,
+) {
   /* I don't really know bytes operations in JS
    * So let's just cheat by overfilling size with 4bytes integers
    * Buffer is clever enough to only retain the newest bytes and
@@ -74,16 +77,19 @@ function generateFixed({ size }, { generators: { random } }: Context) {
   return buffer.toString('ascii');
 }
 
-function generateDataForType(type, context: Context) {
+function generateDataForType(node, context: Context) {
   const { generators } = context;
+  const { type } = node;
+
   if (generators[type]) {
-    return generators[type](type, context);
+    return generators[type](node, context);
   }
 
   if (typeof type === 'object') {
     if (generators[type.logicalType]) {
       return generators[type.logicalType](type, context);
     }
+
     if (generators[type.type]) {
       return generators[type.type](type, context);
     }
@@ -97,9 +103,11 @@ function generateDataForType(type, context: Context) {
   throw new Error(`Unknown type ${type}`);
 }
 
-function generateUnionType(types: Array<any>, namespace, context) {
+function generateUnionType(types: Array<any>, context) {
   const needsNamespacing =
     types.filter(type => type && type.type === 'record').length > 1;
+
+  const { namespace } = context;
 
   const namespaced = types.map(type => {
     const tNamespace = namespace || type.namespace;
@@ -138,15 +146,19 @@ function generateUnionType(types: Array<any>, namespace, context) {
 
 function generateRecord(avroSchema, context) {
   if (Array.isArray(avroSchema)) {
-    return generateUnionType(avroSchema, undefined, context);
+    return generateUnionType(avroSchema, context);
   }
 
   const { fields, namespace } = avroSchema;
+  const currentNamespace = namespace || context.namespace;
 
-  return fields.reduce((record, { name, type }) => {
-    record[name] = Array.isArray(type)
-      ? generateUnionType(type, namespace, context)
-      : generateDataForType(type, context);
+  return fields.reduce((record, node) => {
+    record[node.name] = Array.isArray(node.type)
+      ? generateUnionType(node.type, {
+          ...context,
+          namespace: currentNamespace,
+        })
+      : generateDataForType(node, { ...context, namespace: currentNamespace });
 
     return record;
   }, {});
@@ -164,6 +176,7 @@ export type Generators = {
 export type Context = {
   generators: Generators;
   registry: Registry;
+  namespace?: string;
 };
 
 export type AvroMock<T = any> = (
