@@ -153,10 +153,10 @@ describe('Avro mock data generator', () => {
   it('supports union types with a namespace', () => {
     const result = avroMock({
       type: 'record',
-      namespace: 'com.farms',
+      namespace: 'com.farm',
       fields: [
         {
-          name: 'farms',
+          name: 'farm',
           type: [
             {
               type: 'record',
@@ -173,7 +173,50 @@ describe('Avro mock data generator', () => {
       ],
     } as avsc.AvroSchema);
     expect(result).toEqual({
-      farms: { 'com.farms.CountryFarm': { nbChickens: expect.any(Number) } },
+      farm: { 'com.farm.CountryFarm': { nbChickens: expect.any(Number) } },
+    });
+  });
+
+  it('supports union types with a namespace under an array', () => {
+    const result = avroMock({
+      type: 'record',
+      namespace: 'com.farms',
+      fields: [
+        {
+          name: 'farms',
+          type: {
+            type: 'array',
+            items: {
+              type: 'record',
+              name: 'Farms',
+              fields: [
+                {
+                  name: 'Farm',
+                  type: [
+                    {
+                      type: 'record',
+                      name: 'CountryFarm',
+                      fields: [{ name: 'nbChickens', type: 'int' }],
+                    },
+                    {
+                      type: 'record',
+                      name: 'CityFarm',
+                      fields: [{ name: 'nbChickens', type: 'int' }],
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        },
+      ],
+    } as avsc.AvroSchema);
+    expect(result).toEqual({
+      farms: [
+        {
+          Farm: { 'com.farms.CountryFarm': { nbChickens: expect.any(Number) } },
+        },
+      ],
     });
   });
 

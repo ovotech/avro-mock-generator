@@ -76,6 +76,7 @@ function generateFixed({ size }, { generators: { random } }: Context) {
 
 function generateDataForType(type, context: Context) {
   const { generators } = context;
+
   if (generators[type]) {
     return generators[type](type, context);
   }
@@ -84,6 +85,7 @@ function generateDataForType(type, context: Context) {
     if (generators[type.logicalType]) {
       return generators[type.logicalType](type, context);
     }
+
     if (generators[type.type]) {
       return generators[type.type](type, context);
     }
@@ -97,9 +99,11 @@ function generateDataForType(type, context: Context) {
   throw new Error(`Unknown type ${type}`);
 }
 
-function generateUnionType(types: Array<any>, namespace, context) {
+function generateUnionType(types: Array<any>, context) {
   const needsNamespacing =
     types.filter(type => type && type.type === 'record').length > 1;
+
+  const { namespace } = context;
 
   const namespaced = types.map(type => {
     const tNamespace = namespace || type.namespace;
@@ -138,15 +142,19 @@ function generateUnionType(types: Array<any>, namespace, context) {
 
 function generateRecord(avroSchema, context) {
   if (Array.isArray(avroSchema)) {
-    return generateUnionType(avroSchema, undefined, context);
+    return generateUnionType(avroSchema, context);
   }
 
   const { fields, namespace } = avroSchema;
+  const currentNamespace = namespace || context.namespace;
 
   return fields.reduce((record, { name, type }) => {
     record[name] = Array.isArray(type)
-      ? generateUnionType(type, namespace, context)
-      : generateDataForType(type, context);
+      ? generateUnionType(type, {
+          ...context,
+          namespace: currentNamespace,
+        })
+      : generateDataForType(type, { ...context, namespace: currentNamespace });
 
     return record;
   }, {});
@@ -164,6 +172,7 @@ export type Generators = {
 export type Context = {
   generators: Generators;
   registry: Registry;
+  namespace?: string;
 };
 
 export type AvroMock<T = any> = (
