@@ -18,10 +18,10 @@ const defaultGenerators = {
   string: (_, { generators: { uuid } }: Context) => uuid(),
   bytes: (_, { generators: { uuid } }: Context) => Buffer.from(uuid(), 'ascii'),
   array: ({ items }, context: Context) => [generateDataForType(items, context)],
-  map: ({ type: { values } }, context: Context) => ({
+  map: ({ values }, context: Context) => ({
     [context.generators.uuid()]: generateDataForType(values, context),
   }),
-  enum: ({ type: { symbols } }) => symbols[0],
+  enum: ({ symbols }) => symbols[0],
   uuid: () => uuid4(),
   random: () => Math.random(),
   decimal: generateDecimal,
@@ -59,10 +59,7 @@ function generateDecimal(_, { generators: { random } }: Context) {
   return buf;
 }
 
-function generateFixed(
-  { type: { size } },
-  { generators: { random } }: Context,
-) {
+function generateFixed({ size }, { generators: { random } }: Context) {
   /* I don't really know bytes operations in JS
    * So let's just cheat by overfilling size with 4bytes integers
    * Buffer is clever enough to only retain the newest bytes and
@@ -77,12 +74,11 @@ function generateFixed(
   return buffer.toString('ascii');
 }
 
-function generateDataForType(node, context: Context) {
+function generateDataForType(type, context: Context) {
   const { generators } = context;
-  const { type } = node;
 
   if (generators[type]) {
-    return generators[type](node, context);
+    return generators[type](type, context);
   }
 
   if (typeof type === 'object') {
@@ -152,13 +148,13 @@ function generateRecord(avroSchema, context) {
   const { fields, namespace } = avroSchema;
   const currentNamespace = namespace || context.namespace;
 
-  return fields.reduce((record, node) => {
-    record[node.name] = Array.isArray(node.type)
-      ? generateUnionType(node.type, {
+  return fields.reduce((record, { name, type }) => {
+    record[name] = Array.isArray(type)
+      ? generateUnionType(type, {
           ...context,
           namespace: currentNamespace,
         })
-      : generateDataForType(node, { ...context, namespace: currentNamespace });
+      : generateDataForType(type, { ...context, namespace: currentNamespace });
 
     return record;
   }, {});

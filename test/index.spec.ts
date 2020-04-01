@@ -177,8 +177,7 @@ describe('Avro mock data generator', () => {
     });
   });
 
-  // TODO not only
-  it.only('supports union types with a namespace under an array', () => {
+  it('supports union types with a namespace under an array', () => {
     const result = avroMock({
       type: 'record',
       namespace: 'com.farms',
