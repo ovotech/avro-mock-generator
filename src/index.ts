@@ -36,7 +36,12 @@ const defaultGenerators = {
   'timestamp-micros': (_, { generators: { random } }: Context) =>
     Math.floor(random() * Number.MAX_SAFE_INTEGER),
   duration: generateDuration,
-  date: (_, { generators: { random } }: Context) => new Date(random()),
+  date: (_, context: Context) =>
+    /* long may generate up to 9007199254740991 (MAX_SAFE_INTEGER)
+     * but date supports up to 8640000000000000
+     * so just divide by 100. That's still plenty of time and falls into the 4 digit years most of the time.
+     */
+    new Date(context.generators.long(_, context) / 100),
 };
 
 function generateDuration(_, { generators: { random } }: Context) {
