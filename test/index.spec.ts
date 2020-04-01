@@ -15,8 +15,7 @@ const schemaForAllTypes: avsc.RecordType = {
     { name: 'null', type: 'null' },
     { name: 'string', type: 'string' },
     { name: 'bytes', type: 'bytes' },
-    // @ts-ignore sure from experience that array types can have a name when being a record field
-    { name: 'array', type: 'array', items: 'string' },
+    { name: 'array', type: { type: 'array', items: 'string' } },
     { name: 'map', type: { type: 'map', values: 'int' } },
     { name: 'fixed', type: { type: 'fixed', size: 16 } as avsc.FixedType },
     { name: 'uuid', type: { type: 'string', logicalType: 'uuid' } },
@@ -180,41 +179,43 @@ describe('Avro mock data generator', () => {
 
   // TODO not only
   it.only('supports union types with a namespace under an array', () => {
-    const result = avroMock(({
+    const result = avroMock({
       type: 'record',
       namespace: 'com.farms',
       fields: [
         {
           name: 'farms',
-          type: 'array',
-          items: {
-            type: 'record',
-            name: 'Farms',
-            fields: [
-              {
-                name: 'farm',
-                type: [
-                  {
-                    type: 'record',
-                    name: 'CountryFarm',
-                    fields: [{ name: 'nbChickens', type: 'int' }],
-                  },
-                  {
-                    type: 'record',
-                    name: 'CityFarm',
-                    fields: [{ name: 'nbChickens', type: 'int' }],
-                  },
-                ],
-              },
-            ],
+          type: {
+            type: 'array',
+            items: {
+              type: 'record',
+              name: 'Farms',
+              fields: [
+                {
+                  name: 'Farm',
+                  type: [
+                    {
+                      type: 'record',
+                      name: 'CountryFarm',
+                      fields: [{ name: 'nbChickens', type: 'int' }],
+                    },
+                    {
+                      type: 'record',
+                      name: 'CityFarm',
+                      fields: [{ name: 'nbChickens', type: 'int' }],
+                    },
+                  ],
+                },
+              ],
+            },
           },
         },
       ],
-    } as any) as avsc.AvroSchema);
+    } as avsc.AvroSchema);
     expect(result).toEqual({
       farms: [
         {
-          farm: { 'com.farms.CountryFarm': { nbChickens: expect.any(Number) } },
+          Farm: { 'com.farms.CountryFarm': { nbChickens: expect.any(Number) } },
         },
       ],
     });
