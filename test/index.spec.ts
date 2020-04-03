@@ -220,6 +220,41 @@ describe('Avro mock data generator', () => {
     });
   });
 
+  it('support arrays with union types', () => {
+    const result = avroMock({
+      type: 'record',
+      name: 'Farm',
+      fields: [
+        {
+          name: 'farms',
+          type: {
+            type: 'array',
+            items: [
+              {
+                type: 'record',
+                name: 'CountryFarm',
+                fields: [
+                  {
+                    name: 'farmId',
+                    type: 'int',
+                  },
+                ],
+              },
+            ],
+          },
+          doc: 'The projected annual consumption used to calculate cost',
+        },
+      ],
+    } as avsc.AvroSchema);
+    expect(result).toEqual({
+      farms: [
+        {
+          farmId: expect.any(Number),
+        },
+      ],
+    });
+  });
+
   it('should not qualify names if there is only one record in a sea of non-record union members', () => {
     const result = avroMock(
       {

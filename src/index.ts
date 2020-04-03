@@ -75,6 +75,10 @@ function generateFixed({ size }, { generators: { random } }: Context) {
 }
 
 function generateDataForType(type, context: Context) {
+  if (Array.isArray(type)) {
+    return generateUnionType(type, context);
+  }
+
   const { generators } = context;
 
   if (generators[type]) {
@@ -93,7 +97,7 @@ function generateDataForType(type, context: Context) {
 
   const alias = typeof type === 'string' ? type : type.type;
   if (context.registry[alias]) {
-    return generateRecord(context.registry[alias], context);
+    return generateDataForType(context.registry[alias], context);
   }
 
   throw new Error(`Unknown type ${type}`);
