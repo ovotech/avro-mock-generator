@@ -1,8 +1,7 @@
 import { schema as avsc } from 'avsc';
 import mersenne = require('mersenne-twister');
 
-import uuid4 from 'uuid/v4';
-import uuid5 from 'uuid/v5';
+import { v4 as uuid4, v5 as uuid5 } from 'uuid';
 
 const defaultGenerators = {
   int: (_, { generators: { random } }: Context) =>
