@@ -1,7 +1,7 @@
 import { schema as avsc } from 'avsc';
 import isuuid from 'isuuid';
-
 import avroMock, { Seeded } from '../src/index';
+
 
 const schemaForAllTypes: avsc.RecordType = {
   type: 'record',
@@ -16,6 +16,7 @@ const schemaForAllTypes: avsc.RecordType = {
     { name: 'string', type: 'string' },
     { name: 'bytes', type: 'bytes' },
     { name: 'array', type: { type: 'array', items: 'string' } },
+    { name: 'array-of-object', type: { type: 'array', items: { name: 'object', type: 'record', fields: [{ name: 'id', type: ['string', 'null'] }] } } },
     { name: 'map', type: { type: 'map', values: 'int' } },
     { name: 'fixed', type: { type: 'fixed', size: 16 } as avsc.FixedType },
     { name: 'uuid', type: { type: 'string', logicalType: 'uuid' } },
@@ -63,6 +64,9 @@ describe('Avro mock data generator', () => {
     expect(result).toMatchObject({ bytes: expect.any(Buffer) });
     expect(result).toMatchObject({
       array: expect.arrayContaining([expect.any(String)]),
+    });
+    expect(result).toMatchObject({
+      'array-of-object': expect.arrayContaining([expect.objectContaining({ id: expect.any(String) })]),
     });
     expect(result).toMatchObject({ date: expect.any(Date) });
 
@@ -432,6 +436,64 @@ describe('Avro mock data generator', () => {
       farmAnimals: 'Chicken',
     });
   });
+
+  it('support namespace declared inside an array', () => {
+    const schema = {
+      name: 'Farms',
+      namespace: 'com.farms',
+      type: 'record',
+      fields: [
+        {
+          name: 'birds',
+          type: [
+            {
+              type: 'array',
+              items: {
+                name: 'bird',
+                type: 'record',
+                fields: [
+                  {
+                    name: 'size', type: [
+                      {
+                        namespace: 'com.measure',
+                        type: 'enum',
+                        name: 'sizeValue',
+                        symbols: ['s', 'm', 'l', 'xl']
+                      },
+                      'null'
+                    ]
+                  }
+                ]
+              }
+            },
+            'null'
+          ]
+        },
+        {
+          name: 'pigs',
+          type: [
+            {
+              type: 'array',
+              items: {
+                name: 'pig',
+                type: 'record',
+                fields: [
+                  { name: 'size', 'type': ['com.measure.sizeValue', 'null'] }
+                ]
+              }
+            },
+            'null'
+          ]
+        }
+      ]
+    };
+
+    const result = avroMock(schema as avsc.AvroSchema);
+    expect(result).toEqual({
+      birds: [{ size: 's' }],
+      pigs: [{ size: 's' }]
+    });
+  })
 
   it('throws when encountering an unknown type', () => {
     const schema = {
