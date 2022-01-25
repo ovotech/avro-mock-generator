@@ -1,7 +1,7 @@
 import { schema as avsc } from 'avsc';
+import { v4 as uuid4, v5 as uuid5 } from 'uuid';
 import mersenne = require('mersenne-twister');
 
-import { v4 as uuid4, v5 as uuid5 } from 'uuid';
 
 const defaultGenerators = {
   int: (_, { generators: { random } }: Context) =>
@@ -154,9 +154,9 @@ function generateRecord(avroSchema, context) {
   return fields.reduce((record, { name, type }) => {
     record[name] = Array.isArray(type)
       ? generateUnionType(type, {
-          ...context,
-          namespace: currentNamespace,
-        })
+        ...context,
+        namespace: currentNamespace,
+      })
       : generateDataForType(type, { ...context, namespace: currentNamespace });
 
     return record;
@@ -199,6 +199,10 @@ function buildRegistry(registry, type) {
 
   if (typeof type.type === 'object') {
     return buildRegistry(registry, type.type);
+  }
+
+  if (type.type === 'array' && type.items) {
+    return buildRegistry(registry, type.items);
   }
 
   const { fields, namespace, name } = type;
