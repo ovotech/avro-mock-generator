@@ -455,7 +455,7 @@ describe('Avro mock data generator', () => {
                   {
                     name: 'size', type: [
                       {
-                        namespace: 'com.farms',
+                        namespace: 'com.measure',
                         type: 'enum',
                         name: 'sizeValue',
                         symbols: ['s', 'm', 'l', 'xl']
@@ -478,7 +478,7 @@ describe('Avro mock data generator', () => {
                 name: 'pig',
                 type: 'record',
                 fields: [
-                  { name: 'size', 'type': ['com.farms.sizeValue', 'null'] }
+                  { name: 'size', 'type': ['com.measure.sizeValue', 'null'] }
                 ]
               }
             },
